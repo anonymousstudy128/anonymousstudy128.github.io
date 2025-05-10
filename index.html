@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>User Study</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 800px;
+      margin: auto;
+      padding: 20px;
+    }
+    video {
+      width: 100%;
+      margin-bottom: 10px;
+      border: 1px solid #ccc;
+    }
+    .question-block {
+      margin-bottom: 40px;
+      border-bottom: 1px solid #ddd;
+      padding-bottom: 20px;
+    }
+    label {
+      display: block;
+      margin: 6px 0 2px;
+    }
+    select {
+      width: 100px;
+    }
+    button {
+      margin-top: 30px;
+      padding: 10px 20px;
+    }
+  </style>
+</head>
+<body>
+
+<h2>User Study Instructions</h2>
+<p>
+  This is a 20-question evaluation of motion generation results.
+</p>
+<p>
+  For each question, you will see one video containing four motion clips (A, B, C, D). 
+  Please rank them separately based on:
+</p>
+<ul>
+  <li><strong>Motion Quality</strong>: smoothness, realism, style consistency</li>
+  <li><strong>Physical Plausibility</strong>: balance, force realism, no impossible motions</li>
+</ul>
+<p>
+  You will assign a <strong>Best</strong>, <strong>Second Best</strong>, and <strong>Third Best</strong> for each aspect.
+</p>
+<p>
+  Please enter a name or code below to identify your submission (it doesn't have to be real; it's just to prevent duplicates).
+</p>
+
+<form id="voteForm" action="https://formspree.io/f/mvgaqngv" method="POST">
+
+  <label for="username"><strong>Your name / ID:</strong></label>
+  <input type="text" id="username" name="username" required><br><br>
+
+  <div id="questions"></div>
+
+  <button type="button" onclick="validateAndSubmit()">Submit</button>
+</form>
+
+<script>
+  const form = document.getElementById("voteForm");
+  const container = document.getElementById("questions");
+  const NUM_QUESTIONS = 2;  // ✅ 改成 20 即可
+  const choices = ["A", "B", "C", "D"];
+
+  function createSelect(name) {
+    return `
+      <select name="${name}" required>
+        <option value="">--Select--</option>
+        ${choices.map(c => `<option value="${c}">${c}</option>`).join("")}
+      </select>
+    `;
+  }
+
+  for (let i = 1; i <= NUM_QUESTIONS; i++) {
+    const block = document.createElement("div");
+    block.className = "question-block";
+    block.id = `question-${i}`;  // ✅ 用于滚动定位
+
+    block.innerHTML = `
+      <h3>Question ${i}</h3>
+      <video src="videos/q${i}.mp4" autoplay loop muted controls></video>
+
+      <h4>🔹 Motion Quality</h4>
+      <label>The best:</label> ${createSelect(`q${i}_motion_best`)}
+      <label>Second best:</label> ${createSelect(`q${i}_motion_second`)}
+      <label>Third best:</label> ${createSelect(`q${i}_motion_third`)}
+
+      <h4>🔹 Physical Plausibility</h4>
+      <label>The best:</label> ${createSelect(`q${i}_phys_best`)}
+      <label>Second best:</label> ${createSelect(`q${i}_phys_second`)}
+      <label>Third best:</label> ${createSelect(`q${i}_phys_third`)}
+    `;
+
+    container.appendChild(block);
+  }
+
+  function validateAndSubmit() {
+    const username = document.getElementById("username").value.trim();
+    if (username === "") {
+      alert("Please enter a name or ID.");
+      document.getElementById("username").scrollIntoView({ behavior: 'smooth' });
+      return;
+    }
+
+    for (let i = 1; i <= NUM_QUESTIONS; i++) {
+      const motionVotes = [
+        form[`q${i}_motion_best`].value,
+        form[`q${i}_motion_second`].value,
+        form[`q${i}_motion_third`].value
+      ];
+      const physVotes = [
+        form[`q${i}_phys_best`].value,
+        form[`q${i}_phys_second`].value,
+        form[`q${i}_phys_third`].value
+      ];
+
+      if (motionVotes.includes("") || physVotes.includes("")) {
+        alert(`Please complete all rankings for Question ${i}.`);
+        document.getElementById(`question-${i}`).scrollIntoView({ behavior: 'smooth' });
+        return;
+      }
+
+      if (new Set(motionVotes).size < 3) {
+        alert(`Motion Quality ranking for Question ${i} has duplicate choices.`);
+        document.getElementById(`question-${i}`).scrollIntoView({ behavior: 'smooth' });
+        return;
+      }
+
+      if (new Set(physVotes).size < 3) {
+        alert(`Physical Plausibility ranking for Question ${i} has duplicate choices.`);
+        document.getElementById(`question-${i}`).scrollIntoView({ behavior: 'smooth' });
+        return;
+      }
+    }
+
+    // ✅ 所有验证通过，提交
+    form.submit();
+  }
+</script>
+
+</body>
+</html>
